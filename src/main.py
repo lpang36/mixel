@@ -6,6 +6,27 @@ from animate import animate as generate_frames
 #from anneal import anneal
 from pixel_sort import pixel_sort
 import cProfile
+from functools import reduce
+
+def adaptive_resize(cur_width,cur_height,target_size):
+	if cur_width*cur_height==target_size:
+		return cur_width,cur_height
+	factors = set()
+	for i in range(1,int(target_size**0.5)+1):
+		if target_size%i==0:
+			factors.add(i)
+			factors.add(target_size//i)
+	best_ratio = float('inf')
+	best_output = (cur_width,cur_height)
+	for i in factors:
+		j = target_size//i
+		candidate_ratio = (j/i)/(cur_height/cur_width)
+		if candidate_ratio<1:
+			candidate_ratio = 1/candidate_ratio
+		if candidate_ratio<best_ratio:
+			best_ratio = candidate_ratio
+			best_output = i,j
+	return best_output
 
 def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
 		anneal_options=None,animate_options=None):
@@ -25,10 +46,15 @@ def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
 	input_img = Image.open(input_path).convert(mode='RGB')
 	target_img = Image.open(target_path).convert(mode='RGB')
 	
-	input_img = input_img.resize(target_img.size)
+	new_input_dims = adaptive_resize(input_img.size[0],input_img.size[1], \
+					 target_img.size[0]*target_img.size[1])
+	input_img = input_img.resize(new_input_dims)
 	
 	input_img = np.array(input_img)
 	target_img = np.array(target_img)
+	
+	base_input_img = np.copy(input_img)
+	input_img = np.reshape(input_img,target_img.shape)
 	
 	if algorithm.lower()=='sort':
 		output_img = pixel_sort(input_img,target_img)
@@ -43,11 +69,13 @@ def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
 		raise ValueError('Invalid algorithm type: %s' % algorithm)
 	
 	if output_path.endswith('.gif') or animate:
-		frames = generate_frames(input_img,output_img,**animate_options)
+		frames = generate_frames(base_input_img,output_img,**animate_options)
+		print('Saving frames to %s' % output_path)
 		imageio.mimsave(output_path,frames,duration=1/animate_options['fps'] \
 						if 'fps' in animate_options else 1/30)
 	else:
+		print('Saving image to %s' % output_path)
 		Image.fromarray(output_img).save(output_path)
 		
 if __name__=='__main__':
-	mix('../test/images/starry_night.png','../test/images/mona_lisa.png','../test/output/test.gif',animate=True,animate_options={'cycle':True})
+	mix('../test/images/colorbox.jpg','../test/images/starry_night.png','../test/output/test.gif',animate=True,animate_options={'cycle':True})

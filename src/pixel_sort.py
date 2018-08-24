@@ -3,6 +3,8 @@ import numpy as np
 from colorsys import rgb_to_yiq
 
 def pixel_sort(input_img,target_img):
+	print('Sorting pixels...')
+
 	height,width,_ = target_img.shape
 	row_indices = np.array([[i]*width for i in range(height)])
 	col_indices = np.array([range(width) for i in range(height)])

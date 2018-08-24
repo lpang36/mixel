@@ -4,6 +4,7 @@ cimport numpy as np
 import colorsys
 from random import randint,random
 from math import exp
+from animate import print_replace
 
 DTYPE = np.int
 ctypedef np.int_t DTYPE_t
@@ -37,6 +38,7 @@ def anneal(np.ndarray[DTYPE_t,ndim=3] input_img,np.ndarray[DTYPE_t,ndim=3] targe
 	else:
 		step_flag = False
 		
+	print('Performing simulated annealing...')
 	output_img = np.copy(input_img)
 	
 	cdef float r_weight,g_weight,b_weight
@@ -47,8 +49,20 @@ def anneal(np.ndarray[DTYPE_t,ndim=3] input_img,np.ndarray[DTYPE_t,ndim=3] targe
 		
 	cdef int step_count = 0
 	cdef int no_change_count = 0
+	cdef int max_no_change_count = 0
+	cdef int n_swapped = 0
 	height,width,_ = output_img.shape
 	while step_count<n_steps if step_flag else no_change_count>stop_limit:
+		if step_count%10000==0 and step_count!=0:
+			if step_flag:
+				print_replace('Step %d of %d; swapped %d pairs of pixels so far;' % \
+							  (step_count,n_steps,n_swapped)+'longest stable run is %d' % \
+							  max_no_change_count)
+			else:
+				print_replace('Step %d; swapped %d pairs of pixels so far;' % \
+							  (step_count,n_steps,n_swapped)+'longest stable run is %d' % \
+							  max_no_change_count)
+	
 		x1 = randint(0,width-1)
 		x2 = randint(0,width-1)
 		y1 = randint(0,height-1)
@@ -62,12 +76,16 @@ def anneal(np.ndarray[DTYPE_t,ndim=3] input_img,np.ndarray[DTYPE_t,ndim=3] targe
 		flip_chance = init_rand*exp(-step_count*rand_decay)
 		if candidate_dist<current_dist:
 			no_change_count+=1
+			n_swapped+=1
 			swap(output_img,x1,x2,y1,y2)
 		else:
+			max_no_change_count = max(max_no_change_count,no_change_count)
 			no_change_count = 0
 			if random()<flip_chance:
+				n_swapped+=1
 				swap(output_img,x1,x2,y1,y2)
 			
 		step_count+=1
 	
+	print()
 	return output_img
