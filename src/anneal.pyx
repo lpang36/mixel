@@ -25,8 +25,8 @@ cpdef swap(array,x1,x2,y1,y2):
 def anneal(np.ndarray[DTYPE_t,ndim=3] input_img,np.ndarray[DTYPE_t,ndim=3] target_img, \
 			 verbose=True,rgb_weights=(0.114,0.587,0.299),init_rand=0,rand_decay=0, \
 			 n_steps=None,stop_limit=None,luma_weight=10):
-	if init_rand<0:
-		raise ValueError('init_rand must be non-negative')
+	if init_rand<0 or init_rand>1:
+		raise ValueError('init_rand must be in range [0,1]')
 	if rand_decay<0:
 		raise ValueError('rand_decay must be non-negative')
 	if any([x<0 for x in rgb_weights]):

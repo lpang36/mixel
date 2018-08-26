@@ -93,4 +93,4 @@ def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
 		Image.fromarray(output_img).save(output_path)
 		
 if __name__=='__main__':
-	mix('../test/images/mona_lisa.png','../test/images/starry_night.png','../test/output/test.gif',algorithm='anneal',anneal_options={'n_steps':1000000})
+	mix('../test/images/starry_night.png','../test/images/mona_lisa.png','../test/output/sn2ml_cycle.gif',algorithm='sort',animate_options={'cycle':True},anneal_options={'n_steps':1000000})
