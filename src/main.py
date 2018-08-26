@@ -3,10 +3,11 @@ from PIL import Image
 import numpy as np
 import imageio
 from animate import animate as generate_frames
-#from anneal import anneal
+from anneal import anneal
 from pixel_sort import pixel_sort
 import cProfile
 from functools import reduce
+import time
 
 def adaptive_resize(cur_width,cur_height,target_size):
 	if cur_width*cur_height==target_size:
@@ -29,7 +30,7 @@ def adaptive_resize(cur_width,cur_height,target_size):
 	return best_output
 
 def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
-		anneal_options=None,animate_options=None):
+		anneal_options=None,animate_options=None,verbose=True):
 	if animate_options is None:
 		animate_options = {}
 	for option in animate_options:
@@ -56,26 +57,40 @@ def mix(input_path,target_path,output_path,algorithm='sort',animate=False, \
 	base_input_img = np.copy(input_img)
 	input_img = np.reshape(input_img,target_img.shape)
 	
+	start_time = time.time()
 	if algorithm.lower()=='sort':
 		output_img = pixel_sort(input_img,target_img)
+		if verbose:
+			print('Elapsed time: %.2fs' % (time.time()-start_time))
+			start_time = time.time()
 	elif algorithm.lower()=='anneal':
-		#output_img = anneal(input_img,target_img,**anneal_options)
-		pass
+		output_img = anneal(input_img,target_img,verbose,**anneal_options)
+		if verbose:
+			print('Elapsed time: %.2fs' % (time.time()-start_time))
+			start_time = time.time()
 	elif algorithm.lower()=='hybrid':
-		#sorted_img = pixel_sort(input_img,target_img)
-		#output_img = anneal(sorted_img,target_img,**anneal_options)
-		pass
+		sorted_img = pixel_sort(input_img,target_img,verbose)
+		if verbose:
+			print('Elapsed time: %.2fs' % (time.time()-start_time))
+			start_time = time.time()
+		output_img = anneal(sorted_img,target_img,verbose,**anneal_options)
+		if verbose:
+			print('Elapsed time: %.2fs' % (time.time()-start_time))
+			start_time = time.time()
 	else:
 		raise ValueError('Invalid algorithm type: %s' % algorithm)
 	
 	if output_path.endswith('.gif') or animate:
-		frames = generate_frames(base_input_img,output_img,**animate_options)
-		print('Saving frames to %s' % output_path)
+		frames = generate_frames(base_input_img,output_img,verbose,**animate_options)
+		if verbose:
+			print('Elapsed time: %.2fs' % (time.time()-start_time))
+			print('Saving frames to %s' % output_path)
 		imageio.mimsave(output_path,frames,duration=1/animate_options['fps'] \
 						if 'fps' in animate_options else 1/30)
 	else:
-		print('Saving image to %s' % output_path)
+		if verbose:
+			print('Saving image to %s' % output_path)
 		Image.fromarray(output_img).save(output_path)
 		
 if __name__=='__main__':
-	mix('../test/images/colorbox.jpg','../test/images/starry_night.png','../test/output/test.gif',animate=True,animate_options={'cycle':True})
+	mix('../test/images/mona_lisa.png','../test/images/starry_night.png','../test/output/test.gif',algorithm='anneal',anneal_options={'n_steps':1000000})

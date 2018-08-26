@@ -12,10 +12,10 @@ from PIL import Image
 import numpy as np
 
 def print_replace(line):
-	ERASE_LINE = '\x1b[2K\r'
-	print(ERASE_LINE,end='')
-	print(line,end='')
-	sys.stdout.flush()
+  ERASE_LINE = '\x1b[2K\r'
+  print(ERASE_LINE,end='')
+  print(line,end='')
+  sys.stdout.flush()
  
 #returns dict of (color -> pixel list) pairs
 def imgColorLocs(img):
@@ -81,11 +81,12 @@ def makeLinearMapper(n_frames):
 #when in_place is true the transforming images are drawn on top of one another
 #when draw_src is true the src image is drawn below the moving pixels
 #when draw_dst is true the dst image is drawn below the moving pixels
-def animate(src,dst,background='black',cycle=False,in_place=True, \
-			draw_src=False,draw_dst=False,n_frames=30,fps=30,start_duration=1, \
-			end_duration=1):
-    print('Animating frames...')
-	
+def animate(src,dst,verbose=True,background='black',cycle=False,in_place=True, \
+      draw_src=False,draw_dst=False,n_frames=30,fps=30,start_duration=1, \
+      end_duration=1):
+    if verbose:
+        print('Animating frames...')
+  
     cycle_factor = 0.5 if cycle else 1 #hacky way of making start/end duration half as long and then reversing
  
     src = Image.fromarray(src).convert('RGB')
@@ -96,13 +97,14 @@ def animate(src,dst,background='black',cycle=False,in_place=True, \
     canvasDims = getCanvasDims(src, dst, in_place)
     mappings = getMappings(src, canvasDims[1], dst, canvasDims[2])
     mapper = makeLinearMapper(n_frames)
-	
+  
     all_imgs = []
     frame_list = [0]*int(start_duration*fps*cycle_factor)
     frame_list.extend(range(1,n_frames))
     frame_list.extend([n_frames]*int(end_duration*fps*cycle_factor))
     for ind,step in enumerate(frame_list):
-        print_replace('Generating image %d of %d\r' % (ind + 1, len(frame_list)))
+        if verbose:
+            print_replace('Generating image %d of %d\r' % (ind + 1, len(frame_list)))
  
         img = Image.new('RGB', canvasDims[0], background)
         if draw_src:
@@ -114,9 +116,10 @@ def animate(src,dst,background='black',cycle=False,in_place=True, \
             x, y = mapper(startLoc, stopLoc, step)
             data[x, y] = color
         all_imgs.append(np.array(img))
-    print()
+    if verbose:
+        print()
     
     if cycle:
-	    all_imgs.extend(reversed(all_imgs))
-    	
+        all_imgs.extend(reversed(all_imgs))
+      
     return all_imgs

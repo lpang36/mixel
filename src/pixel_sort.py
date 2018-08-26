@@ -2,8 +2,9 @@ from __future__ import division,print_function
 import numpy as np
 from colorsys import rgb_to_yiq
 
-def pixel_sort(input_img,target_img):
-	print('Sorting pixels...')
+def pixel_sort(input_img,target_img,verbose=True):
+	if verbose:
+		print('Sorting pixels...')
 
 	height,width,_ = target_img.shape
 	row_indices = np.array([[i]*width for i in range(height)])
